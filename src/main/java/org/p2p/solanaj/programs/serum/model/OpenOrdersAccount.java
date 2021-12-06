@@ -1,5 +1,7 @@
 package org.p2p.solanaj.programs.serum.model;
 
+import lombok.Getter;
+import lombok.Setter;
 import lombok.ToString;
 import org.bitcoinj.core.Utils;
 import org.p2p.solanaj.core.PublicKey;
@@ -7,12 +9,18 @@ import org.p2p.solanaj.utils.ByteUtils;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.List;
 
 /** Represents a Serum Open Orders account. Generally built from {@link SerumUtils}. */
 @ToString
+@Getter
+@Setter
 public class OpenOrdersAccount {
 
+  @ToString
+  @Getter
+  @Setter
   public static class Order {
     private int orderIndex;
     private long clientId;
@@ -21,93 +29,22 @@ public class OpenOrdersAccount {
     private boolean isFreeSlot;
     private boolean isBid;
     private float floatPrice;
-
-    public int getOrderIndex() {
-      return orderIndex;
-    }
-
-    public void setOrderIndex(int orderIndex) {
-      this.orderIndex = orderIndex;
-    }
-
-    public long getClientId() {
-      return clientId;
-    }
-
-    public void setClientId(long clientId) {
-      this.clientId = clientId;
-    }
-
-    public byte[] getClientOrderId() {
-      return clientOrderId;
-    }
-
-    public void setClientOrderId(byte[] clientOrderId) {
-      this.clientOrderId = clientOrderId;
-    }
-
-    public long getPrice() {
-      return price;
-    }
-
-    public void setPrice(long price) {
-      this.price = price;
-    }
-
-    public boolean isFreeSlot() {
-      return isFreeSlot;
-    }
-
-    public void setFreeSlot(boolean freeSlot) {
-      isFreeSlot = freeSlot;
-    }
-
-    public boolean isBid() {
-      return isBid;
-    }
-
-    public void setBid(boolean bid) {
-      isBid = bid;
-    }
-
-    public float getFloatPrice() {
-      return floatPrice;
-    }
-
-    public void setFloatPrice(float floatPrice) {
-      this.floatPrice = floatPrice;
-    }
-
-    @Override
-    public String toString() {
-      return "Order{"
-          + "orderIndex="
-          + orderIndex
-          + ", clientId="
-          + clientId
-          + ", clientOrderId="
-          + Arrays.toString(clientOrderId)
-          + ", price="
-          + price
-          + ", isFreeSlot="
-          + isFreeSlot
-          + ", isBid="
-          + isBid
-          + ", floatPrice="
-          + floatPrice
-          + '}';
-    }
   }
 
   private static final int MARKET_OFFSET = 13;
-  private static final int OWNER_OFFSET = MARKET_OFFSET + 32;
-  private static final int BASE_TOKEN_FREE_OFFSET = OWNER_OFFSET + 32;
-  private static final int BASE_TOKEN_TOTAL_OFFSET = BASE_TOKEN_FREE_OFFSET + 8;
-  private static final int QUOTE_TOKEN_FREE_OFFSET = BASE_TOKEN_TOTAL_OFFSET + 8;
-  private static final int QUOTE_TOKEN_TOTAL_OFFSET = QUOTE_TOKEN_FREE_OFFSET + 8;
-  private static final int FREE_SLOT_BITS_OFFSET = QUOTE_TOKEN_TOTAL_OFFSET + 8;
-  private static final int IS_BID_BITS_OFFSET = FREE_SLOT_BITS_OFFSET + 16;
-  private static final int ORDERS_OFFSET = IS_BID_BITS_OFFSET + 16;
+  private static final int OWNER_OFFSET = MARKET_OFFSET + PublicKey.PUBLIC_KEY_LENGTH;
+  private static final int BASE_TOKEN_FREE_OFFSET = OWNER_OFFSET + PublicKey.PUBLIC_KEY_LENGTH;
+  private static final int BASE_TOKEN_TOTAL_OFFSET =
+      BASE_TOKEN_FREE_OFFSET + ByteUtils.UINT_64_LENGTH;
+  private static final int QUOTE_TOKEN_FREE_OFFSET =
+      BASE_TOKEN_TOTAL_OFFSET + ByteUtils.UINT_64_LENGTH;
+  private static final int QUOTE_TOKEN_TOTAL_OFFSET =
+      QUOTE_TOKEN_FREE_OFFSET + ByteUtils.UINT_64_LENGTH;
+  private static final int FREE_SLOT_BITS_OFFSET =
+      QUOTE_TOKEN_TOTAL_OFFSET + ByteUtils.UINT_64_LENGTH;
+  private static final int IS_BID_BITS_OFFSET =
+      FREE_SLOT_BITS_OFFSET + ByteUtils.UINT_64_LENGTH * 2;
+  private static final int ORDERS_OFFSET = IS_BID_BITS_OFFSET + ByteUtils.UINT_64_LENGTH * 2;
   private static final int CLIENT_IDS_OFFSET = ORDERS_OFFSET + 2048;
 
   private AccountFlags accountFlags;
@@ -143,6 +80,8 @@ public class OpenOrdersAccount {
 
   public static OpenOrdersAccount readOpenOrdersAccount(byte[] data) {
     OpenOrdersAccount openOrdersAccount = new OpenOrdersAccount();
+
+    data = Base64.getDecoder().decode(data);
 
     final AccountFlags accountFlags = AccountFlags.readAccountFlags(data);
     openOrdersAccount.setAccountFlags(accountFlags);
@@ -220,141 +159,5 @@ public class OpenOrdersAccount {
     openOrdersAccount.setBidSlots(bidSlots);
 
     return openOrdersAccount;
-  }
-
-  public AccountFlags getAccountFlags() {
-    return accountFlags;
-  }
-
-  public void setAccountFlags(AccountFlags accountFlags) {
-    this.accountFlags = accountFlags;
-  }
-
-  public PublicKey getMarket() {
-    return market;
-  }
-
-  public void setMarket(PublicKey market) {
-    this.market = market;
-  }
-
-  public PublicKey getOwner() {
-    return owner;
-  }
-
-  public void setOwner(PublicKey owner) {
-    this.owner = owner;
-  }
-
-  public long getBaseTokenFree() {
-    return baseTokenFree;
-  }
-
-  public void setBaseTokenFree(long baseTokenFree) {
-    this.baseTokenFree = baseTokenFree;
-  }
-
-  public long getBaseTokenTotal() {
-    return baseTokenTotal;
-  }
-
-  public void setBaseTokenTotal(long baseTokenTotal) {
-    this.baseTokenTotal = baseTokenTotal;
-  }
-
-  public long getQuoteTokenFree() {
-    return quoteTokenFree;
-  }
-
-  public void setQuoteTokenFree(long quoteTokenFree) {
-    this.quoteTokenFree = quoteTokenFree;
-  }
-
-  public long getQuoteTokenTotal() {
-    return quoteTokenTotal;
-  }
-
-  public void setQuoteTokenTotal(long quoteTokenTotal) {
-    this.quoteTokenTotal = quoteTokenTotal;
-  }
-
-  public byte[] getFreeSlotBits() {
-    return freeSlotBits;
-  }
-
-  public void setFreeSlotBits(byte[] freeSlotBits) {
-    this.freeSlotBits = freeSlotBits;
-  }
-
-  public byte[] getIsBidBits() {
-    return isBidBits;
-  }
-
-  public void setIsBidBits(byte[] isBidBits) {
-    this.isBidBits = isBidBits;
-  }
-
-  public long getReferrerRebatesAccrued() {
-    return referrerRebatesAccrued;
-  }
-
-  public void setReferrerRebatesAccrued(long referrerRebatesAccrued) {
-    this.referrerRebatesAccrued = referrerRebatesAccrued;
-  }
-
-  public PublicKey getOwnPubkey() {
-    return ownPubkey;
-  }
-
-  public void setOwnPubkey(PublicKey ownPubkey) {
-    this.ownPubkey = ownPubkey;
-  }
-
-  public List<Long> getLongPrices() {
-    return longPrices;
-  }
-
-  public void setLongPrices(List<Long> longPrices) {
-    this.longPrices = longPrices;
-  }
-
-  public List<Long> getOrderIds() {
-    return orderIds;
-  }
-
-  public void setOrderIds(List<Long> orderIds) {
-    this.orderIds = orderIds;
-  }
-
-  public List<byte[]> getClientOrderIds() {
-    return clientOrderIds;
-  }
-
-  public void setClientOrderIds(List<byte[]> clientOrderIds) {
-    this.clientOrderIds = clientOrderIds;
-  }
-
-  public List<Boolean> getFreeSlots() {
-    return freeSlots;
-  }
-
-  public void setFreeSlots(List<Boolean> freeSlots) {
-    this.freeSlots = freeSlots;
-  }
-
-  public List<Boolean> getBidSlots() {
-    return bidSlots;
-  }
-
-  public void setBidSlots(List<Boolean> bidSlots) {
-    this.bidSlots = bidSlots;
-  }
-
-  public List<Order> getOrders() {
-    return orders;
-  }
-
-  public void setOrders(List<Order> orders) {
-    this.orders = orders;
   }
 }
