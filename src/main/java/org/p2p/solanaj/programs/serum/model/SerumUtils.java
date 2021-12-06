@@ -6,6 +6,7 @@ import org.p2p.solanaj.rpc.RpcClient;
 import org.p2p.solanaj.rpc.RpcException;
 import org.p2p.solanaj.rpc.types.Memcmp;
 import org.p2p.solanaj.rpc.types.ProgramAccount;
+import org.p2p.solanaj.utils.ByteUtils;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -45,24 +46,39 @@ public class SerumUtils {
   // Market
   public static final long LAMPORTS_PER_SOL = 1000000000L;
   public static final int OWN_ADDRESS_OFFSET = 13;
-  private static final int VAULT_SIGNER_NONCE_OFFSET = 45;
-  private static final int BASE_MINT_OFFSET = 53;
-  private static final int QUOTE_MINT_OFFSET = 85;
-  private static final int BASE_VAULT_OFFSET = 117;
-  private static final int BASE_DEPOSITS_TOTAL_OFFSET = 149;
-  private static final int BASE_FEES_ACCRUED_OFFSET = 157;
-  private static final int QUOTE_VAULT_OFFSET = 165;
-  private static final int QUOTE_DEPOSITS_TOTAL_OFFSET = 197;
-  private static final int QUOTE_FEES_ACCRUED_OFFSET = 205;
-  private static final int QUOTE_DUST_THRESHOLD_OFFSET = 213;
-  private static final int REQUEST_QUEUE_OFFSET = 221;
-  private static final int EVENT_QUEUE_OFFSET = 253;
-  private static final int BIDS_OFFSET = 285;
-  private static final int ASKS_OFFSET = 317;
-  private static final int BASE_LOT_SIZE_OFFSET = 349;
-  private static final int QUOTE_LOT_SIZE_OFFSET = 357;
-  private static final int FEE_RATE_BPS_OFFSET = 365;
-  private static final int REFERRER_REBATES_ACCRUED_OFFSET = 373;
+  private static final int VAULT_SIGNER_NONCE_OFFSET =
+      OWN_ADDRESS_OFFSET + PublicKey.PUBLIC_KEY_LENGTH; // 45;
+  private static final int BASE_MINT_OFFSET =
+      VAULT_SIGNER_NONCE_OFFSET + ByteUtils.UINT_64_LENGTH; // 53;
+  private static final int QUOTE_MINT_OFFSET =
+      BASE_MINT_OFFSET + PublicKey.PUBLIC_KEY_LENGTH; // 85;
+  private static final int BASE_VAULT_OFFSET =
+      QUOTE_MINT_OFFSET + PublicKey.PUBLIC_KEY_LENGTH; // 117;
+  private static final int BASE_DEPOSITS_TOTAL_OFFSET =
+      BASE_VAULT_OFFSET + PublicKey.PUBLIC_KEY_LENGTH; // 149;
+  private static final int BASE_FEES_ACCRUED_OFFSET =
+      BASE_DEPOSITS_TOTAL_OFFSET + ByteUtils.UINT_64_LENGTH; // 157;
+  private static final int QUOTE_VAULT_OFFSET =
+      BASE_FEES_ACCRUED_OFFSET + ByteUtils.UINT_64_LENGTH; // 165;
+  private static final int QUOTE_DEPOSITS_TOTAL_OFFSET =
+      QUOTE_VAULT_OFFSET + PublicKey.PUBLIC_KEY_LENGTH; // 197;
+  private static final int QUOTE_FEES_ACCRUED_OFFSET =
+      QUOTE_DEPOSITS_TOTAL_OFFSET + ByteUtils.UINT_64_LENGTH; // 205;
+  private static final int QUOTE_DUST_THRESHOLD_OFFSET =
+      QUOTE_FEES_ACCRUED_OFFSET + ByteUtils.UINT_64_LENGTH; // 213;
+  private static final int REQUEST_QUEUE_OFFSET =
+      QUOTE_DUST_THRESHOLD_OFFSET + ByteUtils.UINT_64_LENGTH; // 221;
+  private static final int EVENT_QUEUE_OFFSET =
+      REQUEST_QUEUE_OFFSET + PublicKey.PUBLIC_KEY_LENGTH; // 253;
+  private static final int BIDS_OFFSET = EVENT_QUEUE_OFFSET + PublicKey.PUBLIC_KEY_LENGTH; // 285;
+  private static final int ASKS_OFFSET = BIDS_OFFSET + PublicKey.PUBLIC_KEY_LENGTH; // 317;
+  private static final int BASE_LOT_SIZE_OFFSET = ASKS_OFFSET + PublicKey.PUBLIC_KEY_LENGTH; // 349;
+  private static final int QUOTE_LOT_SIZE_OFFSET =
+      BASE_LOT_SIZE_OFFSET + ByteUtils.UINT_64_LENGTH; // 357;
+  private static final int FEE_RATE_BPS_OFFSET =
+      QUOTE_LOT_SIZE_OFFSET + ByteUtils.UINT_64_LENGTH; // 365;
+  private static final int REFERRER_REBATES_ACCRUED_OFFSET =
+      FEE_RATE_BPS_OFFSET + ByteUtils.UINT_64_LENGTH; // 373;
 
   // Token mint
   private static final int TOKEN_MINT_DECIMALS_OFFSET = 44;
