@@ -63,7 +63,7 @@ public class LpListDto {
 
     private final PublicKey withdrawQueue;
 
-    private final PublicKey tempLpVault;
+    private final PublicKey lpVault;
 
     private final int marketVersion;
 
@@ -96,7 +96,7 @@ public class LpListDto {
         @JsonProperty("baseVault") PublicKey baseVault,
         @JsonProperty("quoteVault") PublicKey quoteVault,
         @JsonProperty("withdrawQueue") PublicKey withdrawQueue,
-        @JsonProperty("tempLpVault") PublicKey tempLpVault,
+        @JsonProperty("tempLpVault") PublicKey lpVault,
         @JsonProperty("marketVersion") int marketVersion,
         @JsonProperty("marketProgramId") PublicKey marketProgramId,
         @JsonProperty("marketId") PublicKey marketId,
@@ -118,7 +118,7 @@ public class LpListDto {
       this.baseVault = baseVault;
       this.quoteVault = quoteVault;
       this.withdrawQueue = withdrawQueue;
-      this.tempLpVault = tempLpVault;
+      this.lpVault = lpVault;
       this.marketVersion = marketVersion;
       this.marketProgramId = marketProgramId;
       this.marketId = marketId;

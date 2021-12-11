@@ -1,4 +1,4 @@
-package io.github.makarid.solanaj.layouts;
+package io.github.makarid.solanaj.programs.raydium.layouts;
 
 import io.github.makarid.solanaj.core.PublicKey;
 import io.github.makarid.solanaj.utils.ByteUtils;

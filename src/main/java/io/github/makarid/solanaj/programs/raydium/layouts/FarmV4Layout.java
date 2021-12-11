@@ -1,4 +1,4 @@
-package io.github.makarid.solanaj.layouts;
+package io.github.makarid.solanaj.programs.raydium.layouts;
 
 import lombok.Getter;
 import lombok.Setter;
