@@ -71,6 +71,8 @@ public class LpListDto {
 
     private final PublicKey marketId;
 
+    private final PublicKey marketAuthority;
+
     private final PublicKey marketVaultSigner;
 
     private final PublicKey marketBaseVault;
@@ -100,6 +102,7 @@ public class LpListDto {
         @JsonProperty("marketVersion") int marketVersion,
         @JsonProperty("marketProgramId") PublicKey marketProgramId,
         @JsonProperty("marketId") PublicKey marketId,
+        @JsonProperty("marketAuthority") PublicKey marketAuthority,
         @JsonProperty("marketVaultSigner") PublicKey marketVaultSigner,
         @JsonProperty("marketBaseVault") PublicKey marketBaseVault,
         @JsonProperty("marketQuoteVault") PublicKey marketQuoteVault,
@@ -122,6 +125,7 @@ public class LpListDto {
       this.marketVersion = marketVersion;
       this.marketProgramId = marketProgramId;
       this.marketId = marketId;
+      this.marketAuthority = marketAuthority;
       this.marketVaultSigner = marketVaultSigner;
       this.marketBaseVault = marketBaseVault;
       this.marketQuoteVault = marketQuoteVault;

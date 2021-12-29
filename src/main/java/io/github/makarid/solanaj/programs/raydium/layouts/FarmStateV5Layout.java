@@ -11,7 +11,7 @@ import java.util.Base64;
 @Getter
 @Setter
 @ToString
-public class FarmV4Layout {
+public class FarmStateV5Layout {
 
   private long state;
 
@@ -79,29 +79,29 @@ public class FarmV4Layout {
   //    publicKey(),
   private static final int PUBKEY_OFFSET = LAST_SLOT_OFFSET + ByteUtils.UINT_64_LENGTH;
 
-  public FarmV4Layout() {}
-
-  public static FarmV4Layout readFarm(byte[] data) {
-    FarmV4Layout farmV4Layout = new FarmV4Layout();
+  public static FarmStateV5Layout readData(byte[] data) {
+    FarmStateV5Layout farmStateV5Layout = new FarmStateV5Layout();
 
     data = Base64.getDecoder().decode(data);
 
-    farmV4Layout.setState(ByteUtils.readUint64(data, STATE_OFFSET).longValue());
-    farmV4Layout.setNonce(ByteUtils.readUint64(data, NONCE_OFFSET).longValue());
-    farmV4Layout.setLpVault(PublicKey.readPubkey(data, LP_VAULT_OFFSET));
-    farmV4Layout.setRewardVaultA(PublicKey.readPubkey(data, REWARD_VAULT_A_OFFSET));
-    farmV4Layout.setTotalRewardA(ByteUtils.readUint64(data, TOTAL_REWARD_A_OFFSET).longValue());
-    farmV4Layout.setPerShareRewardA(
+    farmStateV5Layout.setState(ByteUtils.readUint64(data, STATE_OFFSET).longValue());
+    farmStateV5Layout.setNonce(ByteUtils.readUint64(data, NONCE_OFFSET).longValue());
+    farmStateV5Layout.setLpVault(PublicKey.readPubkey(data, LP_VAULT_OFFSET));
+    farmStateV5Layout.setRewardVaultA(PublicKey.readPubkey(data, REWARD_VAULT_A_OFFSET));
+    farmStateV5Layout.setTotalRewardA(
+        ByteUtils.readUint64(data, TOTAL_REWARD_A_OFFSET).longValue());
+    farmStateV5Layout.setPerShareRewardA(
         ByteUtils.readUint128(data, PER_SHARE_REWARDA_OFFSET).longValue());
-    farmV4Layout.setPerSlotRewardA(ByteUtils.readUint64(data, PER_SLOT_REWARDA_OFFSET).longValue());
-    farmV4Layout.setOption(ByteUtils.getBit(data, OPTION_OFFSET));
-    farmV4Layout.setRewardVaultB(PublicKey.readPubkey(data, REWARD_VAULTB_OFFSET));
-    farmV4Layout.setTotalRewardB(ByteUtils.readUint64(data, TOTAL_REWARDB_OFFSET).longValue());
-    farmV4Layout.setPerShareRewardB(
+    farmStateV5Layout.setPerSlotRewardA(
+        ByteUtils.readUint64(data, PER_SLOT_REWARDA_OFFSET).longValue());
+    farmStateV5Layout.setOption(ByteUtils.getBit(data, OPTION_OFFSET));
+    farmStateV5Layout.setRewardVaultB(PublicKey.readPubkey(data, REWARD_VAULTB_OFFSET));
+    farmStateV5Layout.setTotalRewardB(ByteUtils.readUint64(data, TOTAL_REWARDB_OFFSET).longValue());
+    farmStateV5Layout.setPerShareRewardB(
         ByteUtils.readUint128(data, PER_SHARE_REWARDB_OFFSET).longValue());
-    farmV4Layout.setLastSlot(ByteUtils.readUint64(data, LAST_SLOT_OFFSET).longValue());
-    farmV4Layout.setPublicKey(PublicKey.readPubkey(data, PUBKEY_OFFSET));
+    farmStateV5Layout.setLastSlot(ByteUtils.readUint64(data, LAST_SLOT_OFFSET).longValue());
+    farmStateV5Layout.setPublicKey(PublicKey.readPubkey(data, PUBKEY_OFFSET));
 
-    return farmV4Layout;
+    return farmStateV5Layout;
   }
 }
