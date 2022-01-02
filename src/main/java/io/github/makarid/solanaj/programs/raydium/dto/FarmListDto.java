@@ -6,8 +6,10 @@ import io.github.makarid.solanaj.core.PublicKey;
 import lombok.Getter;
 import lombok.ToString;
 
+import java.io.IOException;
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 
 @ToString
 @Getter
@@ -30,6 +32,17 @@ public class FarmListDto {
     this.timestamp = timestamp;
     this.version = version;
     this.official = official;
+  }
+
+  public FarmInfo getFarmInfoByFarmId(PublicKey farmId) throws IOException {
+    Optional<FarmInfo> farm =
+        official.stream().filter(farmInfo -> farmInfo.getId().equals(farmId)).findFirst();
+
+    if (farm.isPresent()) {
+      return farm.get();
+    } else {
+      throw new IOException("FarmId doesn't exists in farm.json list.");
+    }
   }
 
   @ToString
