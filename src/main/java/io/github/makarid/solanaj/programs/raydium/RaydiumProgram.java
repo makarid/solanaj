@@ -4,8 +4,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.makarid.solanaj.core.PublicKey;
 import io.github.makarid.solanaj.programs.raydium.dto.FarmListDto;
 import io.github.makarid.solanaj.programs.raydium.dto.LpListDto;
-import io.github.makarid.solanaj.programs.raydium.layouts.FarmV4Layout;
 import io.github.makarid.solanaj.programs.raydium.layouts.LiquidityLayoutV4;
+import io.github.makarid.solanaj.programs.raydium.layouts.StakeInfoLayout;
+import io.github.makarid.solanaj.programs.raydium.layouts.StakeInfoLayoutV4;
 import io.github.makarid.solanaj.programs.raydium.layouts.UserStakeLayout;
 import io.github.makarid.solanaj.programs.raydium.dto.TokenListDto;
 import io.github.makarid.solanaj.programs.serum.model.OpenOrdersAccount;
@@ -22,9 +23,7 @@ import okhttp3.Response;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.MathContext;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Log
 public class RaydiumProgram {
@@ -52,92 +51,108 @@ public class RaydiumProgram {
     Map<String, BigDecimal> stakedAmountInCurrencies = new HashMap<>();
     TokenListDto.LpDto.LpDetails poolDetails = tokenList.getLp().getLps().get(poolMintAddress);
 
-    FarmListDto.FarmInfo farmInfo =
+    Optional<FarmListDto.FarmInfo> farmInfo =
         farmList.getOfficial().stream()
             .filter(farmInfo1 -> farmInfo1.getLpMint().equals(poolMintAddress))
-            .findFirst()
-            .get();
-    LpListDto.LpInfo lpInfo =
+            .findFirst();
+
+    Optional<LpListDto.LpInfo> lpInfo =
         lpList.getOfficial().stream()
             .filter(lpInfo1 -> lpInfo1.getLpMint().equals(poolMintAddress))
-            .findFirst()
-            .get();
+            .findFirst();
+    if (farmInfo.isPresent() && lpInfo.isPresent()) {
+      AccountInfo ammIdAccount = client.getApi().getAccountInfo(lpInfo.get().getId());
 
-    AccountInfo ammIdAccount = client.getApi().getAccountInfo(lpInfo.getId());
+      LiquidityLayoutV4 liquidityInfoLayoutV4 =
+          LiquidityLayoutV4.readData(ammIdAccount.getValue().getData().get(0).getBytes());
 
-    LiquidityLayoutV4 liquidityInfoLayoutV4 =
-        LiquidityLayoutV4.readData(ammIdAccount.getValue().getData().get(0).getBytes());
+      TokenResultObjects.TokenAmountInfo baseVaultAccount =
+          client.getApi().getTokenAccountBalance(liquidityInfoLayoutV4.getBaseVault());
+      TokenResultObjects.TokenAmountInfo quoteVaultAccount =
+          client.getApi().getTokenAccountBalance(liquidityInfoLayoutV4.getQuoteVault());
 
-    TokenResultObjects.TokenAmountInfo baseVaultAccount =
-        client.getApi().getTokenAccountBalance(liquidityInfoLayoutV4.getBaseVault());
-    TokenResultObjects.TokenAmountInfo quoteVaultAccount =
-        client.getApi().getTokenAccountBalance(liquidityInfoLayoutV4.getQuoteVault());
+      TokenResultObjects.TokenAmountInfo lpMintAccount =
+          client.getApi().getTokenSupply(liquidityInfoLayoutV4.getLpMint());
 
-    TokenResultObjects.TokenAmountInfo lpMintAccount =
-        client.getApi().getTokenSupply(liquidityInfoLayoutV4.getLpMint());
+      OpenOrdersAccount openOrdersAccount =
+          OpenOrdersAccount.readOpenOrdersAccount(
+              client
+                  .getApi()
+                  .getAccountInfo(liquidityInfoLayoutV4.getOpenOrders())
+                  .getValue()
+                  .getData()
+                  .get(0)
+                  .getBytes());
 
-    OpenOrdersAccount openOrdersAccount =
-        OpenOrdersAccount.readOpenOrdersAccount(
-            client
-                .getApi()
-                .getAccountInfo(liquidityInfoLayoutV4.getOpenOrders())
-                .getValue()
-                .getData()
-                .get(0)
-                .getBytes());
+      BigDecimal poolTotalBase =
+          BigDecimal.valueOf(baseVaultAccount.getUiAmount())
+              .add(
+                  BigDecimal.valueOf(
+                      openOrdersAccount.getBaseTokenTotal(), baseVaultAccount.getDecimals()))
+              .subtract(
+                  BigDecimal.valueOf(
+                      liquidityInfoLayoutV4.getBaseNeedTakePnl(), baseVaultAccount.getDecimals()));
 
-    BigDecimal poolTotalBase =
-        BigDecimal.valueOf(baseVaultAccount.getUiAmount())
-            .add(
-                BigDecimal.valueOf(
-                    openOrdersAccount.getBaseTokenTotal(), baseVaultAccount.getDecimals()))
-            .subtract(
-                BigDecimal.valueOf(
-                    liquidityInfoLayoutV4.getBaseNeedTakePnl(), baseVaultAccount.getDecimals()));
-    BigDecimal poolTotalQuote =
-        BigDecimal.valueOf(quoteVaultAccount.getUiAmount())
-            .add(
-                BigDecimal.valueOf(
-                    openOrdersAccount.getQuoteTokenTotal(), quoteVaultAccount.getDecimals()))
-            .subtract(
-                BigDecimal.valueOf(
-                    liquidityInfoLayoutV4.getQuoteNeedTakePnl(), quoteVaultAccount.getDecimals()));
+      BigDecimal poolTotalQuote =
+          BigDecimal.valueOf(quoteVaultAccount.getUiAmount())
+              .add(
+                  BigDecimal.valueOf(
+                      openOrdersAccount.getQuoteTokenTotal(), quoteVaultAccount.getDecimals()))
+              .subtract(
+                  BigDecimal.valueOf(
+                      liquidityInfoLayoutV4.getQuoteNeedTakePnl(),
+                      quoteVaultAccount.getDecimals()));
 
-    //            log.info("PoolTotalBase: "+poolTotalBase);
-    //            log.info("PoolTotalQuote: "+poolTotalQuote);
-    //            log.info("Base Vault: "+ baseVaultAccount.toString());
-    //            log.info("Quote Vault: "+ quoteVaultAccount.toString());
-    //            log.info("LP Mint: "+ lpMintAccount.toString());
+      BigDecimal baseUnit =
+          poolTotalBase.divide(
+              BigDecimal.valueOf(lpMintAccount.getUiAmount()), MathContext.DECIMAL32);
 
-    BigDecimal baseUnit =
-        poolTotalBase.divide(
-            BigDecimal.valueOf(lpMintAccount.getUiAmount()), MathContext.DECIMAL32);
-    BigDecimal quoteUnit =
-        poolTotalQuote.divide(
-            BigDecimal.valueOf(lpMintAccount.getUiAmount()), MathContext.DECIMAL32);
+      BigDecimal quoteUnit =
+          poolTotalQuote.divide(
+              BigDecimal.valueOf(lpMintAccount.getUiAmount()), MathContext.DECIMAL32);
 
-    BigDecimal totalLpStaked =
-        getTotalStakedLp(
-            farmInfo.getProgramId(), addressToCheck, farmInfo.getId(), poolDetails.getDecimals());
+      BigDecimal totalLpStaked =
+          getTotalStakedLp(
+              farmInfo.get().getProgramId(),
+              addressToCheck,
+              farmInfo.get().getId(),
+              poolDetails.getDecimals());
 
-    stakedAmountInCurrencies.put(
-        tokenList.getSpl().getSpls().get(liquidityInfoLayoutV4.getBaseMint()).getSymbol(),
-        baseUnit.multiply(totalLpStaked));
-    stakedAmountInCurrencies.put(
-        tokenList.getSpl().getSpls().get(liquidityInfoLayoutV4.getQuoteMint()).getSymbol(),
-        quoteUnit.multiply(totalLpStaked));
+      stakedAmountInCurrencies.put(
+          (tokenList
+                  .getSpl()
+                  .getSpls()
+                  .get(liquidityInfoLayoutV4.getBaseMint())
+                  .getSymbol()
+                  .equals("WSOL"))
+              ? "SOL"
+              : tokenList.getSpl().getSpls().get(liquidityInfoLayoutV4.getBaseMint()).getSymbol(),
+          baseUnit.multiply(totalLpStaked));
+      stakedAmountInCurrencies.put(
+          (tokenList
+                  .getSpl()
+                  .getSpls()
+                  .get(liquidityInfoLayoutV4.getQuoteMint())
+                  .getSymbol()
+                  .equals("WSOL")
+              ? "SOL"
+              : tokenList.getSpl().getSpls().get(liquidityInfoLayoutV4.getQuoteMint()).getSymbol()),
+          quoteUnit.multiply(totalLpStaked));
 
-    return stakedAmountInCurrencies;
+      return stakedAmountInCurrencies;
+    } else {
+      throw new IOException("FarmInfo or LpInfo is not present.");
+    }
   }
 
   public BigDecimal getTotalStakedLp(
-      PublicKey stakeID, PublicKey addressToCheck, PublicKey farmId, int decimals)
+      PublicKey stakeId, PublicKey addressToCheck, PublicKey farmId, int decimals)
       throws RpcException {
     BigDecimal stakedAmount = BigDecimal.ZERO;
 
     // Pare ola ta accounts apo to sigkekrimeno address
     List<ProgramAccount> accounts =
-        client.getApi().getProgramAccounts(stakeID, 40, addressToCheck.toString());
+        client.getApi().getProgramAccounts(stakeId, 40, addressToCheck.toString());
 
     for (ProgramAccount account : accounts) {
       UserStakeLayout userStakeLayout =
@@ -149,84 +164,101 @@ public class RaydiumProgram {
 
     return stakedAmount;
   }
-  // How to get the pending reward from farms
-  //   if (isFusion) {
-  //    if (userInfo) {
-  //      userInfo = cloneDeep(userInfo)
-  //              const { rewardDebt, rewardDebtB, depositBalance } = userInfo
-  //      let d = 0
-  //      // @ts-ignore
-  //      if (newFarmInfo.version === 5) {
-  //        d = 1e15
-  //      } else {
-  //        d = 1e9
-  //      }
-  //              const pendingReward = depositBalance.wei
-  //              .multipliedBy(getBigNumber(perShare))
-  //              .dividedBy(d)
-  //              .minus(rewardDebt.wei)
-  //              const pendingRewardB = depositBalance.wei
-  //              .multipliedBy(getBigNumber(perShareB))
-  //              .dividedBy(d)
-  //              .minus(rewardDebtB.wei)
-  //      userInfo.pendingReward = new TokenAmount(pendingReward, rewardDebt.decimals)
-  //      userInfo.pendingRewardB = new TokenAmount(pendingRewardB, rewardDebtB.decimals)
-  //    } else {
-  //      userInfo = {
-  //              // @ts-ignore
-  //              depositBalance: new TokenAmount(0, farmInfo.lp.decimals),
-  //              // @ts-ignore
-  //              pendingReward: new TokenAmount(0, farmInfo.reward.decimals),
-  //              // @ts-ignore
-  //              pendingRewardB: new TokenAmount(0, farmInfo.rewardB?.decimals)
-  //              }
-  //    }
-  //  }
-  //          if (!isFusion) {
-  //    if (userInfo) {
-  //      userInfo = cloneDeep(userInfo)
-  //              const { rewardDebt, depositBalance } = userInfo
-  //              const pendingReward = depositBalance.wei
-  //              .multipliedBy(getBigNumber(rewardPerShareNet))
-  //              .dividedBy(1e9)
-  //              .minus(rewardDebt.wei)
-  //      userInfo.pendingReward = new TokenAmount(pendingReward, rewardDebt.decimals)
-  //    } else {
-  //      userInfo = {
-  //              // @ts-ignore
-  //              depositBalance: new TokenAmount(0, farmInfo.lp.decimals),
-  //              // @ts-ignore
-  //              pendingReward: new TokenAmount(0, farmInfo.reward.decimals)
-  //              }
-  //    }
-  //  }
 
-  public BigDecimal getPendingRewards(
-      PublicKey stakeID, PublicKey addressToCheck, PublicKey farmId, int decimals)
-      throws RpcException {
-    BigDecimal pendingRewards = BigDecimal.ZERO;
+  /*
+   reference implementation: https://github.com/raydium-io/raydium-ui/blob/master/src/pages/farms.vue 542 line
+   Comments:
+   if perSlotRewardA on Farm_Stake_Layout is NOT 0 then it is a double reward currency
+   rewardVaultA  and rewardVaultB are spl token accounts. if perSlotRewardA  is not 0,
+   means the  corresponding rewardVaultA (spl token account)'s mint(currency) will reward to the farmer.
+   so do perSlotRewardB.
+  */
+
+  public HashMap<String, BigDecimal> getPendingRewards(
+      PublicKey stakeID, PublicKey addressToCheck, PublicKey farmId)
+      throws RpcException, IOException {
+    HashMap<String, BigDecimal> rewardsMap = new HashMap<>();
+
+    BigDecimal pendingRewards;
 
     // Pare ola ta accounts apo to sigkekrimeno address
     List<ProgramAccount> accounts =
         client.getApi().getProgramAccounts(stakeID, 40, addressToCheck.toString());
-    FarmV4Layout farmV4Layout =
-        FarmV4Layout.readFarm(
-            client.getApi().getAccountInfo(farmId).getValue().getData().get(0).getBytes());
+
+    FarmListDto.FarmInfo farmInfo = farmList.getFarmInfoByFarmId(farmId);
+    int version = farmInfo.getVersion();
+    TokenListDto.SplDto.SplDetails rewardSplDetails =
+        tokenList.getSpl().getSpls().get(farmInfo.getRewardMints().get(0));
+
+    BigDecimal d = (version == 5) ? BigDecimal.valueOf(1e15) : BigDecimal.valueOf(1e9);
 
     for (ProgramAccount account : accounts) {
       UserStakeLayout userStakeLayout =
           UserStakeLayout.readData(account.getAccount().getData().getBytes());
+
       if (userStakeLayout.getPoolId().equals(farmId)) {
-        pendingRewards =
-            BigDecimal.valueOf(userStakeLayout.getDepositBalance(), decimals)
-                .multiply(BigDecimal.valueOf(farmV4Layout.getPerShareRewardB()))
-                .divide(BigDecimal.valueOf(1e9), MathContext.DECIMAL32)
-                .subtract(BigDecimal.valueOf(userStakeLayout.getRewardDebt()));
-        System.out.println(pendingRewards);
+
+        BigDecimal deposit = BigDecimal.valueOf(userStakeLayout.getDepositBalance());
+        BigDecimal rewardDebt = BigDecimal.valueOf(userStakeLayout.getRewardDebt());
+        BigDecimal rewardDebtB = BigDecimal.valueOf(userStakeLayout.getRewardDebtB());
+
+        if (version == 5) {
+          StakeInfoLayoutV4 stakeInfoLayout4 =
+              StakeInfoLayoutV4.readData(
+                  client.getApi().getAccountInfo(farmId).getValue().getData().get(0).getBytes());
+
+          BigDecimal pendingRewardsB;
+          BigDecimal perShare = BigDecimal.valueOf(stakeInfoLayout4.getPerShare());
+          BigDecimal perShareB = BigDecimal.valueOf(stakeInfoLayout4.getPerShareB());
+
+          TokenListDto.SplDto.SplDetails rewardBSplDetails =
+              tokenList.getSpl().getSpls().get(farmInfo.getRewardMints().get(1));
+
+          pendingRewards =
+              deposit.multiply(perShare).divide(d, MathContext.DECIMAL32).subtract(rewardDebt);
+
+          pendingRewardsB =
+              deposit.multiply(perShareB).divide(d, MathContext.DECIMAL32).subtract(rewardDebtB);
+
+          if (rewardDebt.compareTo(BigDecimal.ZERO) != 0
+              && rewardDebtB.compareTo(BigDecimal.ZERO) != 0) {
+            rewardsMap.put(
+                rewardSplDetails.getSymbol(),
+                BigDecimal.valueOf(pendingRewards.longValue(), rewardSplDetails.getDecimals()));
+            rewardsMap.put(
+                rewardBSplDetails.getSymbol(),
+                BigDecimal.valueOf(pendingRewardsB.longValue(), rewardBSplDetails.getDecimals()));
+          } else {
+            if (rewardDebt.compareTo(BigDecimal.ZERO) == 0) {
+              rewardsMap.put(
+                  rewardBSplDetails.getSymbol(),
+                  BigDecimal.valueOf(pendingRewardsB.longValue(), rewardBSplDetails.getDecimals()));
+            } else {
+              rewardsMap.put(
+                  rewardSplDetails.getSymbol(),
+                  BigDecimal.valueOf(pendingRewards.longValue(), rewardSplDetails.getDecimals()));
+            }
+          }
+
+        } else {
+          StakeInfoLayout stakeInfoLayout =
+              StakeInfoLayout.readData(
+                  client.getApi().getAccountInfo(farmId).getValue().getData().get(0).getBytes());
+
+          BigDecimal perShareNet = BigDecimal.valueOf(stakeInfoLayout.getRewardPerShareNet());
+
+          pendingRewards =
+              deposit.multiply(perShareNet).divide(d, MathContext.DECIMAL32).subtract(rewardDebt);
+
+          rewardsMap.put(
+              rewardSplDetails.getSymbol(),
+              BigDecimal.valueOf(pendingRewards.longValue(), rewardSplDetails.getDecimals()));
+        }
+        return rewardsMap;
       }
     }
 
-    return pendingRewards;
+    throw new IOException("An error occurred because no rewards found for pool.");
   }
 
   private TokenListDto initTokenList() throws IOException {
@@ -249,7 +281,7 @@ public class RaydiumProgram {
 
     Request request = new Request.Builder().url(url).build();
     try (Response response = client.newCall(request).execute()) {
-      return response.body().string();
+      return Objects.requireNonNull(response.body()).string();
     }
   }
 
