@@ -166,7 +166,7 @@ public class RaydiumProgram {
   }
 
   /*
-   reference implementation: https://github.com/raydium-io/raydium-ui/blob/master/src/pages/farms.vue 542 line
+   reference implementation: https://github.com/raydium-io/raydium-ui/blob/master/src/pages/farms.vue#L542
    Comments:
    if perSlotRewardA on Farm_Stake_Layout is NOT 0 then it is a double reward currency
    rewardVaultA  and rewardVaultB are spl token accounts. if perSlotRewardA  is not 0,
