@@ -60,6 +60,7 @@ public class RaydiumProgram {
         lpList.getOfficial().stream()
             .filter(lpInfo1 -> lpInfo1.getLpMint().equals(poolMintAddress))
             .findFirst();
+
     if (farmInfo.isPresent() && lpInfo.isPresent()) {
       AccountInfo ammIdAccount = client.getApi().getAccountInfo(lpInfo.get().getId());
 
@@ -119,29 +120,28 @@ public class RaydiumProgram {
               poolDetails.getDecimals());
 
       stakedAmountInCurrencies.put(
-          (tokenList
-                  .getSpl()
-                  .getSpls()
-                  .get(liquidityInfoLayoutV4.getBaseMint())
-                  .getSymbol()
-                  .equals("WSOL"))
-              ? "SOL"
-              : tokenList.getSpl().getSpls().get(liquidityInfoLayoutV4.getBaseMint()).getSymbol(),
+          adaptRaydiumCurrencies(
+              tokenList.getSpl().getSpls().get(liquidityInfoLayoutV4.getBaseMint()).getSymbol()),
           baseUnit.multiply(totalLpStaked));
       stakedAmountInCurrencies.put(
-          (tokenList
-                  .getSpl()
-                  .getSpls()
-                  .get(liquidityInfoLayoutV4.getQuoteMint())
-                  .getSymbol()
-                  .equals("WSOL")
-              ? "SOL"
-              : tokenList.getSpl().getSpls().get(liquidityInfoLayoutV4.getQuoteMint()).getSymbol()),
+          adaptRaydiumCurrencies(
+              tokenList.getSpl().getSpls().get(liquidityInfoLayoutV4.getQuoteMint()).getSymbol()),
           quoteUnit.multiply(totalLpStaked));
 
       return stakedAmountInCurrencies;
     } else {
       throw new IOException("FarmInfo or LpInfo is not present.");
+    }
+  }
+
+  public String adaptRaydiumCurrencies(String raydiumCurrency) {
+    switch (raydiumCurrency) {
+      case "WSOL":
+        return "SOL";
+      case "weSUSHI":
+        return "SUSHI";
+      default:
+        return raydiumCurrency;
     }
   }
 
