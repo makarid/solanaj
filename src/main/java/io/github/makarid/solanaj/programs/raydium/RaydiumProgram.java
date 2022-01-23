@@ -137,6 +137,8 @@ public class RaydiumProgram {
   public String adaptRaydiumCurrencies(String raydiumCurrency) {
     switch (raydiumCurrency) {
       case "WSOL":
+      case "stSOL":
+      case "mSOL":
         return "SOL";
       case "weSUSHI":
         return "SUSHI";
