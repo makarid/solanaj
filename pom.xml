@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.p2p</groupId>
     <artifactId>solanaj</artifactId>
-    <packaging>pom</packaging>
+    <packaging>jar</packaging>
     <version>1.6-SNAPSHOT</version>
 
     <name>solanaj</name>
@@ -18,6 +18,18 @@
                         <source>${maven.compiler.source}</source>
                         <target>${maven.compiler.target}</target>
                     </configuration>
+                </plugin>
+                <plugin>  <!-- Create sources.jar -->
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-source-plugin</artifactId>
+                    <executions>
+                        <execution>
+                            <id>attach-sources</id>
+                            <goals>
+                                <goal>jar</goal>
+                            </goals>
+                        </execution>
+                    </executions>
                 </plugin>
             </plugins>
         </pluginManagement>
