@@ -425,6 +425,7 @@ public class MainnetTest extends AccountBasedTest {
   }
 
   @Test
+  @Ignore
   public void getTokenAccountsByDelegateTest() throws RpcException {
     Map<String, Object> requiredParams = Map.of("mint", USDC_TOKEN_MINT);
     TokenAccountInfo tokenAccount =
