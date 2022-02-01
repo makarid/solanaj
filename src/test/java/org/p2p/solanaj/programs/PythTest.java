@@ -91,7 +91,7 @@ public class PythTest {
             "drv1 = %.4f, drv2 = %.4f, drv3 = %.4f",
             priceDataAccount.getDrv1(), priceDataAccount.getDrv2(), priceDataAccount.getDrv3()));
 
-    assertEquals(0.0f, priceDataAccount.getDrv1(), 0.0);
+    assertEquals(0.0f, priceDataAccount.getDrv1(), 0.00000001);
   }
 
   @Test
