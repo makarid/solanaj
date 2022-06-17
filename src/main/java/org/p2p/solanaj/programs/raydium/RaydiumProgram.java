@@ -42,6 +42,7 @@ public class RaydiumProgram {
     } catch (IOException e) {
       log.warning("Raydium Json lists have not been initialized.");
       log.warning(e.getMessage());
+      e.printStackTrace();
     }
   }
 
@@ -49,14 +50,7 @@ public class RaydiumProgram {
       PublicKey poolMintAddress, PublicKey addressToCheck) throws RpcException, IOException {
 
     Map<String, BigDecimal> stakedAmountInCurrencies = new HashMap<>();
-    TokenListDto.LpDto.LpDetails poolDetails = tokenList.getLp().getLps().get(poolMintAddress);
-    if (poolMintAddress.equals(new PublicKey("2pdg9vAH8GsTTWSSP3Za6j5ts4Nzs6tEbNterVe9H62H"))) {
-      poolDetails =
-          tokenList
-              .getLp()
-              .getLps()
-              .get(new PublicKey("HDUJMwYZkjUZre63xUeDhdCi8c6LgUDiBqxmP3QC3VPX"));
-    }
+    LpListDto.LpInfo poolDetails = lpList.getLps().get(poolMintAddress);
 
     Optional<FarmListDto.FarmInfo> farmInfo;
 
@@ -71,7 +65,8 @@ public class RaydiumProgram {
                       new PublicKey("9KEPoZmtHUrBbhWN1v1KWLMkkvwY6WLtAVUCPRtRjP4z"),
                       new PublicKey("Dw6aduBVBxp425wfSWdPFD1N17PZgsDABbeD5LNVQBDa"),
                       null,
-                      null))
+                      null,
+                      false))
               .stream()
               .filter(farmInfo1 -> farmInfo1.getLpMint().equals(poolMintAddress))
               .findFirst();
@@ -150,15 +145,15 @@ public class RaydiumProgram {
               farmInfo.get().getProgramId(),
               addressToCheck,
               farmInfo.get().getId(),
-              poolDetails.getDecimals());
+              poolDetails.getLpDecimals());
 
       stakedAmountInCurrencies.put(
           adaptRaydiumCurrencies(
-              tokenList.getSpl().getSpls().get(liquidityInfoLayoutV4.getBaseMint()).getSymbol()),
+              tokenList.getSpls().get(liquidityInfoLayoutV4.getBaseMint()).getSymbol()),
           baseUnit.multiply(totalLpStaked));
       stakedAmountInCurrencies.put(
           adaptRaydiumCurrencies(
-              tokenList.getSpl().getSpls().get(liquidityInfoLayoutV4.getQuoteMint()).getSymbol()),
+              tokenList.getSpls().get(liquidityInfoLayoutV4.getQuoteMint()).getSymbol()),
           quoteUnit.multiply(totalLpStaked));
 
       return stakedAmountInCurrencies;
@@ -222,8 +217,8 @@ public class RaydiumProgram {
 
     FarmListDto.FarmInfo farmInfo = farmList.getFarmInfoByFarmId(farmId);
     int version = farmInfo.getVersion();
-    TokenListDto.SplDto.SplDetails rewardSplDetails =
-        tokenList.getSpl().getSpls().get(farmInfo.getRewardMints().get(0));
+    TokenListDto.SplDetails rewardSplDetails =
+        tokenList.getSpls().get(farmInfo.getRewardMints().get(0));
 
     BigDecimal d = (version == 5) ? BigDecimal.valueOf(1e15) : BigDecimal.valueOf(1e9);
 
@@ -246,8 +241,8 @@ public class RaydiumProgram {
           BigDecimal perShare = BigDecimal.valueOf(stakeInfoLayout4.getPerShare());
           BigDecimal perShareB = BigDecimal.valueOf(stakeInfoLayout4.getPerShareB());
 
-          TokenListDto.SplDto.SplDetails rewardBSplDetails =
-              tokenList.getSpl().getSpls().get(farmInfo.getRewardMints().get(1));
+          TokenListDto.SplDetails rewardBSplDetails =
+              tokenList.getSpls().get(farmInfo.getRewardMints().get(1));
 
           pendingRewards =
               deposit.multiply(perShare).divide(d, MathContext.DECIMAL32).subtract(rewardDebt);
@@ -298,17 +293,18 @@ public class RaydiumProgram {
 
   private TokenListDto initTokenList() throws IOException {
     return mapper.readValue(
-        getResponse("https://sdk.raydium.io/token/raydium.mainnet.json"), TokenListDto.class);
+        getResponse("https://api.raydium.io/v2/sdk/token/raydium.mainnet.json"),
+        TokenListDto.class);
   }
 
   private LpListDto initLpList() throws IOException {
     return mapper.readValue(
-        getResponse("https://sdk.raydium.io/liquidity/mainnet.json"), LpListDto.class);
+        getResponse("https://api.raydium.io/v2/sdk/liquidity/mainnet.json"), LpListDto.class);
   }
 
   private FarmListDto initFarmList() throws IOException {
     return mapper.readValue(
-        getResponse("https://sdk.raydium.io/farm/mainnet.json"), FarmListDto.class);
+        getResponse("https://api.raydium.io/v2/sdk/farm/mainnet.json"), FarmListDto.class);
   }
 
   private String getResponse(String url) throws IOException {

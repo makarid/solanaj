@@ -1,12 +1,16 @@
 package org.p2p.solanaj.programs.raydium.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.p2p.solanaj.core.PublicKey;
 import lombok.Getter;
 import lombok.ToString;
 
+import java.math.BigDecimal;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 
 @ToString
@@ -23,6 +27,8 @@ public class LpListDto {
 
   private final List<LpInfo> unOfficial;
 
+  private final HashMap<PublicKey, LpInfo> lpsMap = new HashMap<>();
+
   public LpListDto(
       @JsonProperty("name") String name,
       @JsonProperty("timestamp") Date timestamp,
@@ -34,10 +40,18 @@ public class LpListDto {
     this.version = version;
     this.official = official;
     this.unOfficial = unOfficial;
+    official.forEach(lpInfo -> lpsMap.put(lpInfo.lpMint, lpInfo));
+    unOfficial.forEach(lpInfo -> lpsMap.put(lpInfo.lpMint, lpInfo));
+  }
+
+  public HashMap<PublicKey, LpInfo> getLps() {
+    return lpsMap;
   }
 
   @ToString
   @Getter
+  @JsonInclude(JsonInclude.Include.NON_NULL)
+  @JsonIgnoreProperties(value = {"modelDataAccount"})
   public static class LpInfo {
     private final PublicKey id;
 
@@ -85,6 +99,12 @@ public class LpListDto {
 
     private final PublicKey marketEventQueue;
 
+    private final int baseDecimals;
+
+    private final int quoteDecimals;
+
+    private final int lpDecimals;
+
     public LpInfo(
         @JsonProperty("id") PublicKey id,
         @JsonProperty("baseMint") PublicKey baseMint,
@@ -108,7 +128,10 @@ public class LpListDto {
         @JsonProperty("marketQuoteVault") PublicKey marketQuoteVault,
         @JsonProperty("marketBids") PublicKey marketBids,
         @JsonProperty("marketAsks") PublicKey marketAsks,
-        @JsonProperty("marketEventQueue") PublicKey marketEventQueue) {
+        @JsonProperty("marketEventQueue") PublicKey marketEventQueue,
+        @JsonProperty("baseDecimals") int baseDecimals,
+        @JsonProperty("quoteDecimals") int quoteDecimals,
+        @JsonProperty("lpDecimals") int lpDecimals) {
       this.id = id;
       this.baseMint = baseMint;
       this.quoteMint = quoteMint;
@@ -132,6 +155,9 @@ public class LpListDto {
       this.marketBids = marketBids;
       this.marketAsks = marketAsks;
       this.marketEventQueue = marketEventQueue;
+      this.baseDecimals = baseDecimals;
+      this.quoteDecimals = quoteDecimals;
+      this.lpDecimals = lpDecimals;
     }
   }
 }

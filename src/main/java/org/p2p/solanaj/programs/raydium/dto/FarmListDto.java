@@ -1,5 +1,6 @@
 package org.p2p.solanaj.programs.raydium.dto;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.p2p.solanaj.core.PublicKey;
@@ -64,6 +65,8 @@ public class FarmListDto {
 
     private final List<PublicKey> rewardVaults;
 
+    private final boolean upcoming;
+
     public FarmInfo(
         @JsonProperty("id") PublicKey id,
         @JsonProperty("lpMint") PublicKey lpMint,
@@ -72,7 +75,8 @@ public class FarmListDto {
         @JsonProperty("programId") PublicKey programId,
         @JsonProperty("authority") PublicKey authority,
         @JsonProperty("lpVault") PublicKey lpVault,
-        @JsonProperty("rewardVaults") List<PublicKey> rewardVaults) {
+        @JsonProperty("rewardVaults") List<PublicKey> rewardVaults,
+        @JsonProperty("upcoming") boolean upcoming) {
       this.id = id;
       this.lpMint = lpMint;
       this.rewardMints = rewardMints;
@@ -81,6 +85,7 @@ public class FarmListDto {
       this.authority = authority;
       this.lpVault = lpVault;
       this.rewardVaults = rewardVaults;
+      this.upcoming = upcoming;
     }
   }
 }
