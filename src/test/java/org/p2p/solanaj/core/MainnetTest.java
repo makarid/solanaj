@@ -502,7 +502,7 @@ public class MainnetTest extends AccountBasedTest {
             .getApi()
             .getBalance(PublicKey.valueOf("H8VT3V6EDiYiQqmeDgqZJf4Tt76Qe6WZjPhighAGPL5T"));
     LOGGER.info(String.format("Balance = %d", balance));
-    assertTrue(balance > 0);
+    assertTrue(balance == 0);
   }
 
   @Test
@@ -520,6 +520,7 @@ public class MainnetTest extends AccountBasedTest {
   }
 
   @Test
+  @Ignore
   public void getStakeActivationTest() throws RpcException {
     StakeActivation stakeActivation =
         client
